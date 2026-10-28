@@ -11294,7 +11294,8 @@
             "install": "instalar plugin",
             "permissions": "permisos de plugins",
             "logs": "registros de plugins",
-            "development": "plugins de desarrollo"
+            "development": "plugins de desarrollo",
+            "aliases": "plugins complementos extensiones mods extensions"
           }
         },
         "LinearAgentSkillGuide": {
