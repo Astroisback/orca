@@ -169,6 +169,12 @@ export function runTaskPageGitHubLandingRefresh(model: TaskPageGitHubSearchPagin
     workItemsInvalidationNonce !== lastFetchedInvalidationNonceRef.current
   lastFetchedInvalidationNonceRef.current = workItemsInvalidationNonce
   const forcedFetch = (forceRefresh && taskRefreshNonce > 0) || preferenceInvalidated
+  // A Refresh, Retry or search in Tasks, or Tasks opened on one repo, is a user act that may start
+  // that repo's stopped WSL distro; opening a multi-repo fan-out is not (E9).
+  const wake =
+    (forceRefresh && taskRefreshNonce > 0) || selectedRepos.length === 1
+      ? { wakeWslDistro: true }
+      : {}
   if (forcedFetch) {
     hardRefreshEpochRef.current += 1
   }
@@ -206,7 +212,8 @@ export function runTaskPageGitHubLandingRefresh(model: TaskPageGitHubSearchPagin
       githubPerRepoPageLimit,
       githubPageSize,
       q,
-      taskPageToGitHubApiPage(targetPage)
+      taskPageToGitHubApiPage(targetPage),
+      wake
     )
       .then(({ items, failedCount, errorTypes }) => {
         if (cancelled || paginationGenerationRef.current !== requestGeneration) {
@@ -256,6 +263,7 @@ export function runTaskPageGitHubLandingRefresh(model: TaskPageGitHubSearchPagin
   const dispatchedRetrySourceKeys = retryingSourceKeys
   void fetchWorkItemsAcrossRepos(repoArgs, githubPerRepoPageLimit, githubPageSize, q, {
     ...deriveTaskPageGitHubWorkItemsFetchOptions(forcedFetch, shouldProbeOnLanding),
+    ...wake,
     ...(forcedFetch
       ? {
           requireComplete: true
@@ -375,7 +383,8 @@ export function runTaskPageGitHubLandingRefresh(model: TaskPageGitHubSearchPagin
       sourceContext: getTaskPageRepoSourceContext(r, 'github')
     })),
     q,
-    githubPerRepoPageLimit
+    githubPerRepoPageLimit,
+    wake
   ).then(({ totalPages: countedPages }) => {
     if (!cancelled) {
       // Keep proven window limits separate so late real counts replace speculation without resurrecting unreachable pages.
