@@ -41,6 +41,8 @@ import { useFollowDeviceUiLocale } from '../src/i18n/use-follow-device-ui-locale
 import { startMobileUiLanguage } from '../src/i18n/ui-language-preference'
 import { subscribeMobileUiLanguage } from '../src/i18n/mobile-i18n'
 import { startDeviceStore } from '../src/device-store/device-store'
+import { LiveAlertsWatcher } from '../src/live-alerts/LiveAlertsWatcher'
+import { liveAlertsNative } from '../src/live-alerts/live-alerts-native'
 
 export { NativeScreenRecovery as ErrorBoundary } from '../src/components/feedback/NativeScreenRecovery'
 
@@ -183,6 +185,38 @@ export default function RootLayout() {
     }
   }, [openNotificationRoute])
 
+  // Live agent notification taps carry their target in an intent extra, not a push response.
+  useEffect(() => {
+    if (!liveAlertsNative) {
+      return
+    }
+    let disposed = false
+
+    async function openLiveAlertTarget(data: unknown) {
+      const hosts = await loadHostCatalog().catch(() => null)
+      if (disposed) {
+        return
+      }
+      const target = getNotificationNavigationTarget(data, {
+        knownHostIds: hosts ? new Set(hosts.map((host) => host.id)) : undefined,
+        credentialStatusByHostId: hosts
+          ? new Map(hosts.map((host) => [host.id, host.credentialStatus]))
+          : undefined
+      })
+      if (target) {
+        openNotificationRoute(target)
+      }
+    }
+
+    const unsubscribe = liveAlertsNative.subscribeTaps((data) => {
+      void openLiveAlertTarget(data)
+    })
+    return () => {
+      disposed = true
+      unsubscribe()
+    }
+  }, [openNotificationRoute])
+
   // Hide splash only after Stack layout; a placeholder render can precede real screen content and expose a grey gap.
   const onNavigatorLayout = useCallback(async () => {
     await Promise.all([appearanceReady, languageReady])
@@ -194,6 +228,7 @@ export default function RootLayout() {
 
   return (
     <RpcClientProvider>
+      <LiveAlertsWatcher />
       <OrcaQueryProvider>
         <View style={styles.root} onLayout={onNavigatorLayout}>
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
