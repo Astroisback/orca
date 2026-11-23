@@ -8426,5 +8426,17 @@
       "home": "A managed agent's Home Chat can't be deleted",
       "workerOwed": "An orchestration still waits on this chat"
     }
+  },
+  "liveAlerts": {
+    "settings": {
+      "title": "Live agent status",
+      "hint": "Show an ongoing notification and status-bar chip while agents run.",
+      "notificationsOff": "Notifications are off for Orca",
+      "notificationSettings": "Notification settings",
+      "promotionOff": "Live Updates are off for Orca",
+      "allowLiveUpdates": "Allow Live Updates",
+      "batteryHint": "Some phones pause apps in the background. Set Orca’s battery usage to Unrestricted so the status keeps updating.",
+      "batterySettings": "Battery settings"
+    }
   }
 }

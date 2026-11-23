@@ -8,6 +8,8 @@ import type { ConnectionLogSink } from '../../diagnostics/connection/connection-
 import type { HostProfile } from '../../host-catalog/host-profile'
 import { directPathForEndpoint } from '../relay/mobile-direct-endpoint-probe'
 import { startMobileEndpointLifecycle } from './mobile-endpoint-lifecycle'
+import { isBackgroundKeepAliveActive, subscribeBackgroundKeepAlive } from '../background-keep-alive'
+import { startEndpointForegroundDemand } from '../endpoint-foreground-demand'
 import { watchHostRevocation } from './host-revocation-watch'
 import { createUndialableDirectClient, skipsDirectEndpoint } from './undialable-direct-endpoint'
 
@@ -25,9 +27,12 @@ export function openHostLogicalClient(host: HostProfile, onLog: ConnectionLogSin
   }
 
   const endpointLifecycle = startMobileEndpointLifecycle(logical, host, onLog)
-  endpointLifecycle.setForeground(AppState.currentState === 'active')
-  const appStateSubscription = AppState.addEventListener('change', (state) => {
-    endpointLifecycle.setForeground(state === 'active')
+  // Foreground while the app is active, or while the live agent notification keeps it running.
+  const stopForegroundDemand = startEndpointForegroundDemand({
+    appState: AppState,
+    isKeepAliveActive: isBackgroundKeepAliveActive,
+    subscribeKeepAlive: subscribeBackgroundKeepAlive,
+    apply: (foreground) => endpointLifecycle.setForeground(foreground)
   })
   // A definite revocation (K6): cached screens go at once and stay gone until the desktop accepts this
   // phone again; drafts stay until the host is removed.
@@ -42,7 +47,7 @@ export function openHostLogicalClient(host: HostProfile, onLog: ConnectionLogSin
   const closeLogical = logical.close
   logical.close = () => {
     stopRevocationWipe()
-    appStateSubscription.remove()
+    stopForegroundDemand()
     endpointLifecycle.stop()
     closeLogical()
   }
