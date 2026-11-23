@@ -1,6 +1,6 @@
 // Keep lifecycle callers independent of RN types.
 type ForegroundAppState = {
-  currentState: string
+  currentState: string | null | undefined
   addEventListener: (type: 'change', listener: (state: string) => void) => { remove: () => void }
 }
 

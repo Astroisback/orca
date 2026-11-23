@@ -180,7 +180,7 @@ const styles = themedStyleSheet(() => ({
   },
   section: {
     backgroundColor: colors.bgPanel,
-    borderRadius: radii.card,
+    borderRadius: radii.surface,
     overflow: 'hidden'
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md },
@@ -194,7 +194,7 @@ const styles = themedStyleSheet(() => ({
     alignSelf: 'flex-start',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: radii.button,
+    borderRadius: radii.control,
     backgroundColor: colors.bgRaised
   },
   buttonPressed: { opacity: 0.6 },
